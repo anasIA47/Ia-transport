@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IA TRANSPORT</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6f8;color:#17202a}
+header{background:#111827;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}header b{font-size:22px}
+main{max-width:900px;margin:auto;padding:16px}.card{background:#fff;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 2px 10px #0000000d}
+input,select,button{width:100%;padding:13px;border:1px solid #d5dbe1;border-radius:10px;font-size:16px;margin:6px 0}
+button{background:#111827;color:#fff;border:0;font-weight:700}button.secondary{background:#e9edf1;color:#111827}.danger{background:#b91c1c}
+nav{display:flex;gap:7px;overflow:auto;margin-bottom:12px}nav button{white-space:nowrap;width:auto;margin:0}
+.hidden{display:none}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{font-size:28px;font-weight:800}.muted{color:#667085}.ok{color:#15803d;font-weight:700}.warn{color:#b45309;font-weight:700}
+.photo{border:2px dashed #cbd5e1;padding:10px;border-radius:12px}.photo input{border:0}.list{border-top:1px solid #eee;padding:10px 0}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><b>🚚 IA TRANSPORT</b><div id="who" style="font-size:13px;margin-top:4px"></div></header>
+<main>
+<section id="setup" class="card">
+<h2>Configuration</h2>
+<p class="muted">À faire une seule fois sur cet appareil.</p>
+<input id="url" placeholder="URL Supabase (https://....supabase.co)">
+<input id="key" placeholder="Clé Publishable Supabase">
+<button onclick="saveConfig()">Enregistrer et continuer</button>
+</section>
+
+<section id="login" class="card hidden">
+<h2>Connexion</h2>
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Mot de passe">
+<button onclick="login()">Se connecter</button>
+<p id="loginMsg" class="muted"></p>
+</section>
+
+<section id="app" class="hidden">
+<nav id="nav"></nav>
+<div id="content"></div>
+</section>
+</main>
+
+<script>
+let sb=null, me=null, profile=null;
+const $=id=>document.getElementById(id);
+function cfg(){return JSON.parse(localStorage.getItem("ia_transport_cfg")||"null")}
+function saveConfig(){
+ const url=$("url").value.trim(), key=$("key").value.trim();
+ if(!url||!key)return alert("Renseigne l'URL Supabase et la clé Publishable.");
+ localStorage.setItem("ia_transport_cfg",JSON.stringify({url,key})); location.reload();
+}
+async function start(){
+ const c=cfg();
+ if(!c){$("setup").classList.remove("hidden");return}
+ $("setup").classList.add("hidden");
+ sb=supabase.createClient(c.url,c.key);
+ const {data:{session}}=await sb.auth.getSession();
+ if(session) await loadUser(session.user); else $("login").classList.remove("hidden");
+}
+async function login(){
+ $("loginMsg").textContent="Connexion...";
+ const {data,error}=await sb.auth.signInWithPassword({email:$("email").value,password:$("password").value});
+ if(error){$("loginMsg").textContent=error.message;return}
+ await loadUser(data.user);
+}
+async function loadUser(user){
+ const r=await sb.from("profiles").select("*").eq("id",user.id).single();
+ if(r.error){$("loginMsg").textContent="Profil introuvable dans Supabase.";return}
+ profile=r.data; me=user;
+ $("login").classList.add("hidden");$("app").classList.remove("hidden");
+ $("who").textContent=profile.full_name+" · "+profile.role;
+ buildNav(); home();
+}
+function buildNav(){
+ const n=$("nav");
+ n.innerHTML=`<button onclick="home()">Accueil</button>
+ ${profile.role==="admin"?`<button onclick="planning()">Planning</button><button onclick="vehicles()">Véhicules</button><button onclick="drivers()">Chauffeurs</button>`:
+ `<button onclick="myPlanning()">Mon planning</button><button onclick="checkVehicle()">Contrôle camion</button>`}
+ <button class="secondary" onclick="logout()">Déconnexion</button>`;
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+function home(){
+ $("content").innerHTML=profile.role==="admin"?`
+ <div class="card"><h2>Tableau de bord</h2><div class="row">
+ <div class="card"><div class="stat">👥</div><b>Chauffeurs</b></div>
+ <div class="card"><div class="stat">🚚</div><b>Véhicules</b></div></div>
+ <p class="muted">Crée les plannings, affecte les véhicules et suis les contrôles quotidiens.</p></div>`:
+ `<div class="card"><h2>Bonjour ${profile.full_name} 👋</h2><p>Consulte ton planning et valide ton contrôle véhicule du jour.</p></div>`;
+}
+async function planning(){
+ const [d,v,s]=await Promise.all([
+  sb.from("profiles").select("*").eq("role","driver").order("full_name"),
+  sb.from("vehicles").select("*").order("registration"),
+  sb.from("shifts").select("*,profiles(full_name),vehicles(registration,model)").order("shift_date",{ascending:false}).limit(50)
+ ]);
+ let html=`<div class="card"><h2>➕ Nouveau planning</h2>
+ <div class="row"><input id="pdate" type="date"><select id="pdriver">${(d.data||[]).map(x=>`<option value="${x.id}">${x.full_name}</option>`).join("")}</select></div>
+ <select id="pvehicle"><option value="">Sans véhicule</option>${(v.data||[]).map(x=>`<option value="${x.id}">${x.registration} ${x.model||""}</option>`).join("")}</select>
+ <input id="proute" placeholder="Tournée / secteur">
+ <button onclick="addShift()">Créer le planning</button></div>
+ <div class="card"><h2>Planning récent</h2>`;
+ (s.data||[]).forEach(x=>html+=`<div class="list"><b>${x.shift_date}</b> · ${x.profiles?.full_name||""}<br>🚚 ${x.vehicles?.registration||"—"} · ${x.route||"—"}<br><span class="${x.status==="confirmed"?"ok":"warn"}">${x.status}</span></div>`);
+ $("content").innerHTML=html+"</div>";
+}
+async function addShift(){
+ const {error}=await sb.from("shifts").insert({shift_date:$("pdate").value,driver_id:$("pdriver").value,vehicle_id:$("pvehicle").value||null,route:$("proute").value});
+ if(error)alert(error.message);else planning();
+}
+async function myPlanning(){
+ const {data,error}=await sb.from("shifts").select("*,vehicles(registration,model)").eq("driver_id",me.id).order("shift_date",{ascending:false}).limit(30);
+ if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
+ let html='<div class="card"><h2>📅 Mon planning</h2>';
+ (data||[]).forEach(x=>html+=`<div class="list"><b>${x.shift_date}</b> · 🚚 ${x.vehicles?.registration||"—"}<br>${x.route||""}<br><b>${x.status}</b>${x.status==="pending"?`<button onclick="confirmShift('${x.id}')">✅ Confirmer</button><button class="secondary" onclick="unavailable('${x.id}')">❌ Indisponible</button>`:""}</div>`);
+ $("content").innerHTML=html+"</div>";
+}
+async function confirmShift(id){await sb.from("shifts").update({status:"confirmed",responded_at:new Date().toISOString()}).eq("id",id);myPlanning()}
+async function unavailable(id){await sb.from("shifts").update({status:"unavailable",responded_at:new Date().toISOString()}).eq("id",id);myPlanning()}
+
+async function vehicles(){
+ const {data,error}=await sb.from("vehicles").select("*").order("registration");
+ if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
+ let html=`<div class="card"><h2>🚚 Ajouter un véhicule</h2><input id="vreg" placeholder="Immatriculation"><input id="vmodel" placeholder="Modèle"><button onclick="addVehicle()">Ajouter</button></div><div class="card"><h2>Flotte</h2>`;
+ (data||[]).forEach(v=>html+=`<div class="list"><b>${v.registration}</b> · ${v.model||""}<br>Dernier kilométrage : ${v.last_km??"—"}</div>`);
+ $("content").innerHTML=html+"</div>";
+}
+async function addVehicle(){
+ const {error}=await sb.from("vehicles").insert({registration:$("vreg").value.trim(),model:$("vmodel").value.trim()});
+ if(error)alert(error.message);else vehicles();
+}
+async function drivers(){
+ const {data,error}=await sb.from("profiles").select("*").eq("role","driver").order("full_name");
+ $("content").innerHTML=`<div class="card"><h2>👥 Chauffeurs</h2>${(data||[]).map(x=>`<div class="list"><b>${x.full_name}</b><br>${x.phone||""}</div>`).join("")}</div>`;
+}
+async function checkVehicle(){
+ const {data,error}=await sb.from("vehicles").select("*").eq("status","available").order("registration");
+ if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
+ $("content").innerHTML=`<div class="card"><h2>🔎 Contrôle quotidien</h2>
+ <select id="cvehicle">${(data||[]).map(v=>`<option value="${v.id}" data-km="${v.last_km??""}">${v.registration} ${v.model||""}</option>`).join("")}</select>
+ <p class="muted">Prends 4 photos du véhicule + le compteur kilométrique.</p>
+ <div class="photo">Avant<input id="front" type="file" accept="image/*" capture="environment"></div>
+ <div class="photo">Arrière<input id="rear" type="file" accept="image/*" capture="environment"></div>
+ <div class="photo">Côté gauche<input id="left" type="file" accept="image/*" capture="environment"></div>
+ <div class="photo">Côté droit<input id="right" type="file" accept="image/*" capture="environment"></div>
+ <div class="photo">Compteur kilométrique<input id="odo" type="file" accept="image/*" capture="environment"></div>
+ <input id="kmend" type="number" placeholder="Kilométrage affiché (vérifie la photo)">
+ <button onclick="submitCheck()">Valider le contrôle</button>
+ <p class="muted">Le kilométrage du jour = compteur actuel − dernier compteur enregistré.</p></div>`;
+}
+async function upload(file,path){
+ const {error}=await sb.storage.from("vehicle-photos").upload(path,file,{upsert:true});
+ if(error)throw error; return path;
+}
+async function submitCheck(){
+ const vid=$("cvehicle").value, opt=$("cvehicle").selectedOptions[0], km=Number($("kmend").value);
+ if(!km)return alert("Indique le kilométrage.");
+ const date=new Date().toISOString().slice(0,10), base=`${me.id}/${date}/${vid}`;
+ try{
+  const paths={};
+  for(const id of ["front","rear","left","right","odo"]){
+   const f=$(id).files[0]; if(!f)throw new Error("Photo manquante : "+id);
+   paths[id]=await upload(f,`${base}/${id}-${Date.now()}.jpg`);
+  }
+  const last=Number(opt.dataset.km||0), day=Math.max(0,km-last);
+  const {error}=await sb.from("vehicle_checks").insert({vehicle_id:vid,driver_id:me.id,check_date:date,km_start:last,km_end:km,km_day:day,photo_front:paths.front,photo_rear:paths.rear,photo_left:paths.left,photo_right:paths.right,photo_odometer:paths.odo});
+  if(error)throw error;
+  await sb.from("vehicles").update({last_km:km}).eq("id",vid);
+  alert("Contrôle enregistré. Kilométrage du jour : "+day+" km.");
+  home();
+ }catch(e){alert(e.message)}
+}
+start();
+</script>
+</body>
+</html>
