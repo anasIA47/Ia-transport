@@ -47,11 +47,12 @@ let sb=null, me=null, profile=null;
 const $=id=>document.getElementById(id);
 function cfg(){return JSON.parse(localStorage.getItem("ia_transport_cfg")||"null")}
 function saveConfig(){
- const url=$("url").value.trim(), key=$("key").value.trim();
+ let url=$("url").value.trim().replace(/\/rest\/v1\/?$/,"").replace(/\/+$/,""), key=$("key").value.trim();
  if(!url||!key)return alert("Renseigne l'URL Supabase et la clé Publishable.");
  localStorage.setItem("ia_transport_cfg",JSON.stringify({url,key})); location.reload();
 }
 async function start(){
+ if(location.search.includes("reset")){localStorage.removeItem("ia_transport_cfg");history.replaceState(null,"",location.pathname)}
  const c=cfg();
  if(!c){$("setup").classList.remove("hidden");return}
  $("setup").classList.add("hidden");
@@ -67,7 +68,7 @@ async function login(){
 }
 async function loadUser(user){
  const r=await sb.from("profiles").select("*").eq("id",user.id).single();
- if(r.error){$("loginMsg").textContent="Profil introuvable dans Supabase.";return}
+ if(r.error){$("loginMsg").textContent="Profil introuvable ("+(r.error.code||"")+") : "+r.error.message+" | id="+user.id;return}
  profile=r.data; me=user;
  $("login").classList.add("hidden");$("app").classList.remove("hidden");
  $("who").textContent=profile.full_name+" · "+profile.role;
