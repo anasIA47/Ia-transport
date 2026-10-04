@@ -60,7 +60,7 @@ main{padding:16px 14px 100px}.stats{grid-template-columns:1fr 1fr}.row{grid-temp
 
 <div id="shell" class="hidden">
 <aside><div class="logo">🚚 IA <i>TRANSPORT</i></div><div id="nav"></div>
-<div class="me"><b id="whoN"></b><span id="whoR"></span><small style="display:block;opacity:.5;margin-top:4px">v3</small><button onclick="logout()">⎋ Déconnexion</button></div></aside>
+<div class="me"><b id="whoN"></b><span id="whoR"></span><small style="display:block;opacity:.5;margin-top:4px">v3.1</small><button onclick="logout()">⎋ Déconnexion</button></div></aside>
 <main id="content"></main></div>
 
 <script>
@@ -97,9 +97,9 @@ async function login(){
 async function loadUser(user){
  const r=await sb.from("profiles").select("*").eq("id",user.id).single();
  if(r.error){$("login").classList.remove("hidden");$("loginMsg").textContent="Profil introuvable ("+(r.error.code||"")+") : "+r.error.message;return}
- profile=r.data;me=user;
+ profile=r.data;me=user;const raw=profile.role;profile.role=/^admin/i.test(String(raw||"").trim())?"admin":"driver";
  $("login").classList.add("hidden");$("shell").classList.remove("hidden");
- $("whoN").textContent=profile.full_name;$("whoR").textContent=profile.role==="admin"?"Administrateur":"Chauffeur";
+ $("whoN").textContent=profile.full_name;$("whoR").textContent=profile.role==="admin"?"Administrateur":"Chauffeur (rôle : "+raw+")";
  buildNav();if(profile.role!=="admin")badge();go(profile.role==="admin"?"home":"myPlanning");
 }
 const PAGES={home:()=>home(),planning:()=>planning(),drivers:()=>drivers(),vehicles:()=>vehicles(),myPlanning:()=>myPlanning(),notifs:()=>notifs(),checkVehicle:()=>checkVehicle()};
