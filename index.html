@@ -2,173 +2,269 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>IA TRANSPORT</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6f8;color:#17202a}
-header{background:#111827;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}header b{font-size:22px}
-main{max-width:900px;margin:auto;padding:16px}.card{background:#fff;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 2px 10px #0000000d}
-input,select,button{width:100%;padding:13px;border:1px solid #d5dbe1;border-radius:10px;font-size:16px;margin:6px 0}
-button{background:#111827;color:#fff;border:0;font-weight:700}button.secondary{background:#e9edf1;color:#111827}.danger{background:#b91c1c}
-nav{display:flex;gap:7px;overflow:auto;margin-bottom:12px}nav button{white-space:nowrap;width:auto;margin:0}
-.hidden{display:none}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{font-size:28px;font-weight:800}.muted{color:#667085}.ok{color:#15803d;font-weight:700}.warn{color:#b45309;font-weight:700}
-.photo{border:2px dashed #cbd5e1;padding:10px;border-radius:12px}.photo input{border:0}.list{border-top:1px solid #eee;padding:10px 0}
-@media(max-width:600px){.row{grid-template-columns:1fr}}
+:root{--navy:#0b1b3a;--blue:#1d5fe0;--bg:#f3f6fb;--line:#e4e9f1;--txt:#14213d;--mut:#6b7a90;--ok:#16a34a;--okb:#dcfce7;--wa:#d97706;--wab:#fef3c7;--ko:#dc2626;--kob:#fee2e2}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+.hidden{display:none!important}
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(160deg,var(--navy),#16346b)}
+.box{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:400px;box-shadow:0 20px 50px #0005}
+.logo{font-weight:800;font-size:22px;letter-spacing:.5px}.logo i{font-style:normal;color:var(--blue)}
+.box .logo{color:var(--navy);margin-bottom:6px}
+input,select,button,textarea{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin:6px 0;font-family:inherit}
+button{background:var(--blue);color:#fff;border:0;font-weight:700;cursor:pointer}button.sec{background:#e8eef9;color:var(--navy)}button.ko{background:#fff;color:var(--ko);border:1px solid var(--ko)}button.sm{width:auto;padding:9px 14px;margin:0;font-size:14px}
+#shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+aside{background:var(--navy);color:#cbd5e8;padding:20px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+aside .logo{color:#fff;padding:0 10px 18px}aside .logo i{color:#5b9bff}
+#nav{display:flex;flex-direction:column;gap:4px;flex:1}
+#nav button{background:none;color:#cbd5e8;text-align:left;border-radius:10px;padding:12px;margin:0;font-weight:600;font-size:15px;display:flex;gap:10px;align-items:center}
+#nav button.on{background:var(--blue);color:#fff}
+.me{font-size:13px;padding:10px;border-top:1px solid #ffffff22}.me b{display:block;color:#fff}
+.me button{background:#ffffff18;margin-top:8px;padding:9px;font-size:14px}
+main{padding:24px;max-width:1000px;width:100%}
+h1{margin:0 0 4px;font-size:26px}.sub{color:var(--mut);margin:0 0 18px}
+.card{background:#fff;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 1px 8px #0a1f4410;overflow-x:auto}
+.card h2{margin:0 0 10px;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{border-radius:14px;padding:16px;background:#fff;box-shadow:0 1px 8px #0a1f4410}
+.stat b{font-size:30px;display:block}.stat.ok{background:var(--okb)}.stat.wa{background:var(--wab)}.stat.ko{background:var(--kob)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{color:var(--mut);font-weight:600;font-size:13px}
+.g td,.g th{text-align:center}.g td:first-child,.g th:first-child{text-align:left}.g td.c{cursor:pointer}
+.pill{padding:4px 10px;border-radius:99px;font-size:12.5px;font-weight:700;display:inline-block}
+.pill.confirmed{background:var(--okb);color:var(--ok)}.pill.pending{background:var(--wab);color:var(--wa)}.pill.unavailable{background:var(--kob);color:var(--ko)}
+.wk{display:flex;gap:8px;align-items:center;margin-bottom:10px}.wk span{font-weight:700;flex:1;text-align:center}
+.shift{border:1px solid var(--line);border-left:5px solid var(--wa);border-radius:12px;padding:14px;margin:10px 0}
+.shift.confirmed{border-left-color:var(--ok)}.shift.unavailable{border-left-color:var(--ko)}
+.shift .r{display:flex;justify-content:space-between;align-items:center;gap:8px}.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mut{color:var(--mut)}
+.photo{border:2px dashed #c3cfe2;padding:10px;border-radius:12px;margin:8px 0}.photo input{border:0;margin:0;padding:6px 0}
+@media(max-width:800px){
+#shell{display:block}aside{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:9}
+aside .logo,.me b,.me span{display:none}.me{padding:0;border:0}.me button{margin:0;padding:10px;font-size:12px}
+#nav{flex-direction:row;justify-content:space-around}#nav button{flex-direction:column;gap:2px;font-size:11px;padding:6px 4px;text-align:center}
+main{padding:16px 14px 100px}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header><b>🚚 IA TRANSPORT</b><div id="who" style="font-size:13px;margin-top:4px"></div></header>
-<main>
-<section id="setup" class="card">
-<h2>Configuration</h2>
-<p class="muted">À faire une seule fois sur cet appareil.</p>
-<input id="url" placeholder="URL Supabase (https://....supabase.co)">
-<input id="key" placeholder="Clé Publishable Supabase">
-<button onclick="saveConfig()">Enregistrer et continuer</button>
-</section>
+<section id="setup" class="auth hidden"><div class="box"><div class="logo">IA <i>TRANSPORT</i></div><h2>Configuration</h2>
+<p class="mut">À faire une seule fois sur cet appareil.</p>
+<input id="url" placeholder="URL Supabase (https://....supabase.co)"><input id="key" placeholder="Clé Publishable Supabase">
+<button onclick="saveConfig()">Enregistrer et continuer</button></div></section>
 
-<section id="login" class="card hidden">
-<h2>Connexion</h2>
-<input id="email" type="email" placeholder="Email">
-<input id="password" type="password" placeholder="Mot de passe">
-<button onclick="login()">Se connecter</button>
-<p id="loginMsg" class="muted"></p>
-</section>
+<section id="login" class="auth hidden"><div class="box"><div class="logo">🚚 IA <i>TRANSPORT</i></div><h2 style="margin:8px 0 2px">Connexion</h2>
+<p class="mut" style="margin:0 0 8px">Accède à ton espace.</p>
+<input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Mot de passe">
+<button onclick="login()">Se connecter</button><p id="loginMsg" class="mut"></p></div></section>
 
-<section id="app" class="hidden">
-<nav id="nav"></nav>
-<div id="content"></div>
-</section>
-</main>
+<div id="shell" class="hidden">
+<aside><div class="logo">🚚 IA <i>TRANSPORT</i></div><div id="nav"></div>
+<div class="me"><b id="whoN"></b><span id="whoR"></span><small style="display:block;opacity:.5;margin-top:4px">v3</small><button onclick="logout()">⎋ Déconnexion</button></div></aside>
+<main id="content"></main></div>
 
 <script>
-let sb=null, me=null, profile=null;
+let sb=null,me=null,profile=null,wk=monday(new Date());
 const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ST={confirmed:"Confirmé",pending:"En attente",unavailable:"Indisponible"};
+const IC={confirmed:"✅",pending:"⏳",unavailable:"❌"};
+const pill=s=>`<span class="pill ${esc(s)}">${ST[s]||esc(s)}</span>`;
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function monday(d){d=new Date(d);d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+const fr=(d,o)=>d.toLocaleDateString("fr-FR",o);
+const wkLabel=()=>"Semaine du "+fr(wk,{day:"numeric",month:"long"})+" au "+fr(addDays(wk,6),{day:"numeric",month:"long",year:"numeric"});
 function cfg(){return JSON.parse(localStorage.getItem("ia_transport_cfg")||"null")}
 function saveConfig(){
- let url=$("url").value.trim().replace(/\/rest\/v1\/?$/,"").replace(/\/+$/,""), key=$("key").value.trim();
+ let url=$("url").value.trim().replace(/\/rest\/v1\/?$/,"").replace(/\/+$/,""),key=$("key").value.trim();
  if(!url||!key)return alert("Renseigne l'URL Supabase et la clé Publishable.");
- localStorage.setItem("ia_transport_cfg",JSON.stringify({url,key})); location.reload();
+ localStorage.setItem("ia_transport_cfg",JSON.stringify({url,key}));location.reload();
 }
 async function start(){
  if(location.search.includes("reset")){localStorage.removeItem("ia_transport_cfg");history.replaceState(null,"",location.pathname)}
- const c=cfg();
- if(!c){$("setup").classList.remove("hidden");return}
- $("setup").classList.add("hidden");
+ const c=cfg();if(!c){$("setup").classList.remove("hidden");return}
  sb=supabase.createClient(c.url,c.key);
  const {data:{session}}=await sb.auth.getSession();
- if(session) await loadUser(session.user); else $("login").classList.remove("hidden");
+ if(session)await loadUser(session.user);else $("login").classList.remove("hidden");
 }
 async function login(){
  $("loginMsg").textContent="Connexion...";
- const {data,error}=await sb.auth.signInWithPassword({email:$("email").value,password:$("password").value});
+ const {data,error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
  if(error){$("loginMsg").textContent=error.message;return}
  await loadUser(data.user);
 }
 async function loadUser(user){
  const r=await sb.from("profiles").select("*").eq("id",user.id).single();
- if(r.error){$("loginMsg").textContent="Profil introuvable ("+(r.error.code||"")+") : "+r.error.message+" | id="+user.id;return}
- profile=r.data; me=user;
- $("login").classList.add("hidden");$("app").classList.remove("hidden");
- $("who").textContent=profile.full_name+" · "+profile.role;
- buildNav(); home();
+ if(r.error){$("login").classList.remove("hidden");$("loginMsg").textContent="Profil introuvable ("+(r.error.code||"")+") : "+r.error.message;return}
+ profile=r.data;me=user;
+ $("login").classList.add("hidden");$("shell").classList.remove("hidden");
+ $("whoN").textContent=profile.full_name;$("whoR").textContent=profile.role==="admin"?"Administrateur":"Chauffeur";
+ buildNav();if(profile.role!=="admin")badge();go(profile.role==="admin"?"home":"myPlanning");
 }
+const PAGES={home:()=>home(),planning:()=>planning(),drivers:()=>drivers(),vehicles:()=>vehicles(),myPlanning:()=>myPlanning(),notifs:()=>notifs(),checkVehicle:()=>checkVehicle()};
 function buildNav(){
- const n=$("nav");
- n.innerHTML=`<button onclick="home()">Accueil</button>
- ${profile.role==="admin"?`<button onclick="planning()">Planning</button><button onclick="vehicles()">Véhicules</button><button onclick="drivers()">Chauffeurs</button>`:
- `<button onclick="myPlanning()">Mon planning</button><button onclick="checkVehicle()">Contrôle camion</button>`}
- <button class="secondary" onclick="logout()">Déconnexion</button>`;
+ const a=profile.role==="admin";
+ const items=a?[["home","📊","Tableau"],["planning","📅","Planning"],["drivers","👥","Chauffeurs"],["vehicles","🚚","Véhicules"]]:[["myPlanning","📅","Planning"],["notifs","🔔","Alertes"],["checkVehicle","🔎","Contrôle"]];
+ $("nav").innerHTML=items.map(i=>`<button data-p="${i[0]}" onclick="go('${i[0]}')"><span>${i[1]}</span>${i[2]}</button>`).join("");
 }
+async function go(p){
+ document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+ view('<div class="card mut">Chargement…</div>');
+ try{await PAGES[p]()}catch(e){view('<div class="card"><b>Erreur :</b> '+esc(e&&e.message||e)+'</div>')}
+}
+addEventListener("unhandledrejection",e=>{const c=$("content");if(c)view('<div class="card"><b>Erreur :</b> '+esc(e.reason&&e.reason.message||e.reason)+'</div>')});
 async function logout(){await sb.auth.signOut();location.reload()}
-function home(){
- $("content").innerHTML=profile.role==="admin"?`
- <div class="card"><h2>Tableau de bord</h2><div class="row">
- <div class="card"><div class="stat">👥</div><b>Chauffeurs</b></div>
- <div class="card"><div class="stat">🚚</div><b>Véhicules</b></div></div>
- <p class="muted">Crée les plannings, affecte les véhicules et suis les contrôles quotidiens.</p></div>`:
- `<div class="card"><h2>Bonjour ${profile.full_name} 👋</h2><p>Consulte ton planning et valide ton contrôle véhicule du jour.</p></div>`;
+const view=h=>$("content").innerHTML=h;
+const err=e=>view(`<div class="card">${esc(e.message)}</div>`);
+function weekBar(fn){return `<div class="wk"><button class="sec sm" onclick="${fn}(-1)">‹</button><span>${wkLabel()}</span><button class="sec sm" onclick="${fn}(1)">›</button></div>`}
+
+const TM=t=>t?String(t).slice(0,5):"";
+const hrs=x=>x.start_time?TM(x.start_time)+(x.end_time?" – "+TM(x.end_time):""):"Horaire à définir";
+const dfull=d=>fr(new Date(d+"T12:00"),{weekday:"long",day:"numeric",month:"long"});
+async function notify(uid,msg){await sb.from("notifications").insert({user_id:uid,message:msg})}
+let curShift=null,WS=[];
+async function home(){
+ const f=ymd(wk),t=ymd(addDays(wk,6));
+ const [s,d]=await Promise.all([
+  sb.from("shifts").select("shift_date,status,published_at,comment,start_time,profiles(full_name)").gte("shift_date",f).lte("shift_date",t).order("shift_date"),
+  sb.from("profiles").select("id",{count:"exact",head:true}).eq("role","driver")]);
+ if(s.error)return err(s.error);
+ const a=s.data||[],pub=a.filter(x=>x.published_at),c=k=>pub.filter(x=>x.status===k).length;
+ const li=(arr,fn)=>arr.length?`<table>${arr.map(fn).join("")}</table>`:'<p class="mut">Personne 🎉</p>';
+ view(`<h1>Tableau de bord</h1><p class="sub">${wkLabel()}</p>${weekBar("shiftHome")}
+ <div class="stats"><div class="stat ok"><b>${c("confirmed")}</b>🟢 Confirmés</div><div class="stat wa"><b>${c("pending")}</b>🟠 En attente</div>
+ <div class="stat ko"><b>${c("unavailable")}</b>🔴 Indisponibles</div><div class="stat"><b>${d.count??0}</b>Chauffeurs</div></div>
+ ${a.length>pub.length?`<div class="card">📝 ${a.length-pub.length} jour(s) en brouillon, non publié(s) aux chauffeurs.</div>`:""}
+ <div class="card"><h2>⏳ N'ont pas encore confirmé</h2>${li(pub.filter(x=>x.status==="pending"),x=>`<tr><td><b>${esc(x.profiles?.full_name)}</b></td><td>${esc(dfull(x.shift_date))}</td></tr>`)}</div>
+ <div class="card"><h2>❌ Indisponibilités / refus</h2>${li(pub.filter(x=>x.status==="unavailable"),x=>`<tr><td><b>${esc(x.profiles?.full_name)}</b></td><td>${esc(dfull(x.shift_date))}</td><td>${esc(x.comment||"")}</td></tr>`)}</div>`);
 }
+function shiftHome(n){wk=addDays(wk,7*n);go("home")}
+function shiftWeek(n){wk=addDays(wk,7*n);curShift=null;go("planning")}
 async function planning(){
+ const f=ymd(wk),t=ymd(addDays(wk,6));
  const [d,v,s]=await Promise.all([
   sb.from("profiles").select("*").eq("role","driver").order("full_name"),
   sb.from("vehicles").select("*").order("registration"),
-  sb.from("shifts").select("*,profiles(full_name),vehicles(registration,model)").order("shift_date",{ascending:false}).limit(50)
- ]);
- let html=`<div class="card"><h2>➕ Nouveau planning</h2>
- <div class="row"><input id="pdate" type="date"><select id="pdriver">${(d.data||[]).map(x=>`<option value="${x.id}">${x.full_name}</option>`).join("")}</select></div>
- <select id="pvehicle"><option value="">Sans véhicule</option>${(v.data||[]).map(x=>`<option value="${x.id}">${x.registration} ${x.model||""}</option>`).join("")}</select>
- <input id="proute" placeholder="Tournée / secteur">
- <button onclick="addShift()">Créer le planning</button></div>
- <div class="card"><h2>Planning récent</h2>`;
- (s.data||[]).forEach(x=>html+=`<div class="list"><b>${x.shift_date}</b> · ${x.profiles?.full_name||""}<br>🚚 ${x.vehicles?.registration||"—"} · ${x.route||"—"}<br><span class="${x.status==="confirmed"?"ok":"warn"}">${x.status}</span></div>`);
- $("content").innerHTML=html+"</div>";
+  sb.from("shifts").select("*").gte("shift_date",f).lte("shift_date",t)]);
+ if(d.error||s.error)return err(d.error||s.error);
+ WS=s.data||[];const days=[...Array(7)].map((_,i)=>addDays(wk,i));
+ const rows=(d.data||[]).map(p=>{
+  const mine=WS.filter(x=>x.driver_id===p.id&&x.published_at),ok=mine.filter(x=>x.status==="confirmed").length;
+  return `<tr><td><b>${esc(p.full_name)}</b></td>${days.map(dy=>{const x=WS.find(m=>m.driver_id===p.id&&m.shift_date===ymd(dy));
+   return `<td class="c" onclick="pick('${ymd(dy)}','${p.id}')">${x?(x.published_at?IC[x.status]||"•":"📝"):"–"}</td>`}).join("")}<td>${mine.length?Math.round(100*ok/mine.length)+"%":"–"}</td></tr>`}).join("");
+ const nd=WS.filter(x=>!x.published_at).length;
+ view(`<h1>Planning</h1><p class="sub">Création, publication et suivi</p>${weekBar("shiftWeek")}
+ <div class="card"><table class="g"><tr><th>Chauffeur</th>${days.map(x=>`<th>${fr(x,{weekday:"short"})}<br>${fr(x,{day:"2-digit",month:"2-digit"})}</th>`).join("")}<th>Taux</th></tr>${rows||'<tr><td colspan="9" class="mut">Aucun chauffeur.</td></tr>'}</table>
+ <p class="mut" style="font-size:13px">📝 brouillon · ⏳ en attente · ✅ confirmé · ❌ indisponible. Touche une case pour créer ou modifier.</p>
+ <button onclick="publishWeek()" ${nd?"":"disabled style='opacity:.5'"}>📤 Publier la semaine (${nd} brouillon${nd>1?"s":""})</button></div>
+ <div class="card" id="newShift"><h2 id="formTitle">➕ Créer un planning</h2>
+ <div class="row"><input id="pdate" type="date" value="${f}"><select id="pdriver">${(d.data||[]).map(x=>`<option value="${x.id}">${esc(x.full_name)}</option>`).join("")}</select></div>
+ <div class="row"><input id="pstart" type="time"><input id="pend" type="time"></div>
+ <select id="pvehicle"><option value="">Sans véhicule</option>${(v.data||[]).map(x=>`<option value="${x.id}">${esc(x.registration)} ${esc(x.model||"")}</option>`).join("")}</select>
+ <input id="proute" placeholder="Tournée / secteur"><button onclick="saveShift()">Enregistrer</button>
+ <button id="delBtn" class="ko hidden" onclick="delShift()">Supprimer ce jour</button></div>`);
 }
-async function addShift(){
- const {error}=await sb.from("shifts").insert({shift_date:$("pdate").value,driver_id:$("pdriver").value,vehicle_id:$("pvehicle").value||null,route:$("proute").value});
- if(error)alert(error.message);else planning();
+function pick(d,id){
+ curShift=WS.find(x=>x.shift_date===d&&x.driver_id===id)||null;const x=curShift||{};
+ $("pdate").value=d;$("pdriver").value=id;$("pstart").value=TM(x.start_time);$("pend").value=TM(x.end_time);
+ $("pvehicle").value=x.vehicle_id||"";$("proute").value=x.route||"";
+ $("formTitle").textContent=curShift?"✏️ Modifier le planning":"➕ Créer un planning";$("delBtn").classList.toggle("hidden",!curShift);
+ $("newShift").scrollIntoView({behavior:"smooth"});
 }
+async function saveShift(){
+ if(!$("pdate").value)return alert("Choisis une date.");
+ const b={shift_date:$("pdate").value,driver_id:$("pdriver").value,vehicle_id:$("pvehicle").value||null,route:$("proute").value,start_time:$("pstart").value||null,end_time:$("pend").value||null};
+ let error;
+ if(curShift){
+  if(curShift.published_at)Object.assign(b,{status:"pending",responded_at:null,confirmed_at:null,comment:null});
+  ({error}=await sb.from("shifts").update(b).eq("id",curShift.id));
+  if(!error&&curShift.published_at)await notify(b.driver_id,"✏️ Planning modifié : "+dfull(b.shift_date)+". Merci de confirmer à nouveau.");
+ }else ({error}=await sb.from("shifts").insert(b));
+ if(error)alert(error.message);curShift=null;planning();
+}
+async function delShift(){
+ if(!curShift||!confirm("Supprimer ce jour de planning ?"))return;
+ const {error}=await sb.from("shifts").delete().eq("id",curShift.id);
+ if(!error&&curShift.published_at)await notify(curShift.driver_id,"🗑️ Planning annulé : "+dfull(curShift.shift_date));
+ if(error)alert(error.message);curShift=null;planning();
+}
+async function publishWeek(){
+ const dr=WS.filter(x=>!x.published_at);if(!dr.length)return;
+ if(!confirm("Publier "+dr.length+" jour(s) et prévenir les chauffeurs ?"))return;
+ const {error}=await sb.from("shifts").update({published_at:new Date().toISOString()}).in("id",dr.map(x=>x.id));
+ if(error)return alert(error.message);
+ const by={};dr.forEach(x=>(by[x.driver_id]=by[x.driver_id]||[]).push(x));
+ for(const id in by)await notify(id,"📤 Nouveau planning publié : "+by[id].length+" jour(s), "+wkLabel().toLowerCase()+". Merci de confirmer.");
+ planning();
+}
+function shiftMyWeek(n){wk=addDays(wk,7*n);myPlanning()}
 async function myPlanning(){
- const {data,error}=await sb.from("shifts").select("*,vehicles(registration,model)").eq("driver_id",me.id).order("shift_date",{ascending:false}).limit(30);
- if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
- let html='<div class="card"><h2>📅 Mon planning</h2>';
- (data||[]).forEach(x=>html+=`<div class="list"><b>${x.shift_date}</b> · 🚚 ${x.vehicles?.registration||"—"}<br>${x.route||""}<br><b>${x.status}</b>${x.status==="pending"?`<button onclick="confirmShift('${x.id}')">✅ Confirmer</button><button class="secondary" onclick="unavailable('${x.id}')">❌ Indisponible</button>`:""}</div>`);
- $("content").innerHTML=html+"</div>";
+ const {data,error}=await sb.from("shifts").select("*,vehicles(registration,model)").eq("driver_id",me.id).not("published_at","is",null).gte("shift_date",ymd(wk)).lte("shift_date",ymd(addDays(wk,6))).order("shift_date");
+ if(error)return err(error);
+ view(`<h1>Mon planning</h1><p class="sub">Bonjour ${esc(profile.full_name)} 👋</p>${weekBar("shiftMyWeek")}
+ ${(data||[]).map(x=>`<div class="shift ${esc(x.status)}"><div class="r"><b>${esc(dfull(x.shift_date))}</b>${pill(x.status)}</div>
+ <p style="margin:8px 0 0">🕐 ${esc(hrs(x))}<br>🚚 ${esc(x.vehicles?.registration||"Véhicule à définir")} ${esc(x.vehicles?.model||"")}<br>📍 ${esc(x.route||"—")}</p>
+ ${x.status==="pending"?`<textarea id="c_${x.id}" rows="2" placeholder="Ajouter un commentaire (optionnel)"></textarea><div class="btns"><button onclick="answer('${x.id}','confirmed')">✓ Je confirme</button><button class="ko" onclick="answer('${x.id}','unavailable')">✕ Je suis indisponible</button></div>`:(x.comment?`<p class="mut">💬 ${esc(x.comment)}</p>`:"")}</div>`).join("")||'<div class="card mut">Aucun planning publié cette semaine.</div>'}`);
 }
-async function confirmShift(id){await sb.from("shifts").update({status:"confirmed",responded_at:new Date().toISOString()}).eq("id",id);myPlanning()}
-async function unavailable(id){await sb.from("shifts").update({status:"unavailable",responded_at:new Date().toISOString()}).eq("id",id);myPlanning()}
-
+async function answer(id,status){
+ const now=new Date().toISOString(),c=$("c_"+id),u={status,responded_at:now,comment:(c&&c.value.trim())||null};
+ if(status==="confirmed")u.confirmed_at=now;
+ const {error}=await sb.from("shifts").update(u).eq("id",id);if(error)alert(error.message);myPlanning();
+}
+async function badge(){
+ const {count}=await sb.from("notifications").select("id",{count:"exact",head:true}).eq("user_id",me.id).eq("read",false);
+ const b=document.querySelector('#nav [data-p="notifs"]');if(b&&count)b.insertAdjacentHTML("beforeend",` <b style="background:var(--ko);color:#fff;border-radius:99px;padding:1px 7px;font-size:11px">${count}</b>`);
+}
+async function notifs(){
+ const {data,error}=await sb.from("notifications").select("*").eq("user_id",me.id).order("created_at",{ascending:false}).limit(30);
+ if(error)return err(error);
+ view(`<h1>Notifications</h1><p class="sub">Publications et modifications de planning</p><div class="card"><table>${(data||[]).map(x=>`<tr style="${x.read?"":"font-weight:700"}"><td>${esc(x.message)}</td><td class="mut">${fr(new Date(x.created_at),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td></tr>`).join("")||'<tr><td class="mut">Aucune notification.</td></tr>'}</table></div>`);
+ if((data||[]).some(x=>!x.read))await sb.from("notifications").update({read:true}).eq("user_id",me.id).eq("read",false);
+}
 async function vehicles(){
- const {data,error}=await sb.from("vehicles").select("*").order("registration");
- if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
- let html=`<div class="card"><h2>🚚 Ajouter un véhicule</h2><input id="vreg" placeholder="Immatriculation"><input id="vmodel" placeholder="Modèle"><button onclick="addVehicle()">Ajouter</button></div><div class="card"><h2>Flotte</h2>`;
- (data||[]).forEach(v=>html+=`<div class="list"><b>${v.registration}</b> · ${v.model||""}<br>Dernier kilométrage : ${v.last_km??"—"}</div>`);
- $("content").innerHTML=html+"</div>";
+ const {data,error}=await sb.from("vehicles").select("*").order("registration");if(error)return err(error);
+ view(`<h1>Véhicules</h1><p class="sub">Gestion de ta flotte</p>
+ <div class="card"><table><tr><th>Immatriculation</th><th>Modèle</th><th>Dernier km</th></tr>${(data||[]).map(v=>`<tr><td><b>${esc(v.registration)}</b></td><td>${esc(v.model||"")}</td><td>${esc(v.last_km??"—")}</td></tr>`).join("")||'<tr><td colspan="3" class="mut">Aucun véhicule.</td></tr>'}</table></div>
+ <div class="card"><h2>🚚 Ajouter un véhicule</h2><div class="row"><input id="vreg" placeholder="Immatriculation"><input id="vmodel" placeholder="Modèle"></div><button onclick="addVehicle()">Ajouter</button></div>`);
 }
 async function addVehicle(){
  const {error}=await sb.from("vehicles").insert({registration:$("vreg").value.trim(),model:$("vmodel").value.trim()});
  if(error)alert(error.message);else vehicles();
 }
 async function drivers(){
- const {data,error}=await sb.from("profiles").select("*").eq("role","driver").order("full_name");
- $("content").innerHTML=`<div class="card"><h2>👥 Chauffeurs</h2>${(data||[]).map(x=>`<div class="list"><b>${x.full_name}</b><br>${x.phone||""}</div>`).join("")}</div>`;
+ const {data,error}=await sb.from("profiles").select("*").eq("role","driver").order("full_name");if(error)return err(error);
+ view(`<h1>Chauffeurs</h1><p class="sub">Liste de tous tes chauffeurs</p><div class="card"><table><tr><th>Nom</th><th>Téléphone</th></tr>
+ ${(data||[]).map(x=>`<tr><td><b>${esc(x.full_name)}</b></td><td>${esc(x.phone||"")}</td></tr>`).join("")||'<tr><td colspan="2" class="mut">Aucun chauffeur.</td></tr>'}</table></div>`);
 }
 async function checkVehicle(){
- const {data,error}=await sb.from("vehicles").select("*").eq("status","available").order("registration");
- if(error)return $("content").innerHTML=`<div class="card">${error.message}</div>`;
- $("content").innerHTML=`<div class="card"><h2>🔎 Contrôle quotidien</h2>
- <select id="cvehicle">${(data||[]).map(v=>`<option value="${v.id}" data-km="${v.last_km??""}">${v.registration} ${v.model||""}</option>`).join("")}</select>
- <p class="muted">Prends 4 photos du véhicule + le compteur kilométrique.</p>
- <div class="photo">Avant<input id="front" type="file" accept="image/*" capture="environment"></div>
- <div class="photo">Arrière<input id="rear" type="file" accept="image/*" capture="environment"></div>
- <div class="photo">Côté gauche<input id="left" type="file" accept="image/*" capture="environment"></div>
- <div class="photo">Côté droit<input id="right" type="file" accept="image/*" capture="environment"></div>
- <div class="photo">Compteur kilométrique<input id="odo" type="file" accept="image/*" capture="environment"></div>
- <input id="kmend" type="number" placeholder="Kilométrage affiché (vérifie la photo)">
+ const {data,error}=await sb.from("vehicles").select("*").eq("status","available").order("registration");if(error)return err(error);
+ const ph=(id,l)=>`<div class="photo">${l}<input id="${id}" type="file" accept="image/*" capture="environment"></div>`;
+ view(`<h1>Contrôle quotidien</h1><p class="sub">4 photos du véhicule + le compteur</p><div class="card">
+ <select id="cvehicle">${(data||[]).map(v=>`<option value="${v.id}" data-km="${esc(v.last_km??"")}">${esc(v.registration)} ${esc(v.model||"")}</option>`).join("")}</select>
+ ${ph("front","Avant")}${ph("rear","Arrière")}${ph("left","Côté gauche")}${ph("right","Côté droit")}${ph("odo","Compteur kilométrique")}
+ <input id="kmend" type="number" inputmode="numeric" placeholder="Kilométrage affiché (vérifie la photo)">
  <button onclick="submitCheck()">Valider le contrôle</button>
- <p class="muted">Le kilométrage du jour = compteur actuel − dernier compteur enregistré.</p></div>`;
+ <p class="mut">Km du jour = compteur actuel − dernier compteur enregistré.</p></div>`);
 }
 async function upload(file,path){
- const {error}=await sb.storage.from("vehicle-photos").upload(path,file,{upsert:true});
- if(error)throw error; return path;
+ const {error}=await sb.storage.from("vehicle-photos").upload(path,file,{upsert:true});if(error)throw error;return path;
 }
 async function submitCheck(){
- const vid=$("cvehicle").value, opt=$("cvehicle").selectedOptions[0], km=Number($("kmend").value);
- if(!km)return alert("Indique le kilométrage.");
- const date=new Date().toISOString().slice(0,10), base=`${me.id}/${date}/${vid}`;
+ const vid=$("cvehicle").value,opt=$("cvehicle").selectedOptions[0],km=Number($("kmend").value);
+ if(!vid)return alert("Aucun véhicule disponible.");if(!km)return alert("Indique le kilométrage.");
+ const date=ymd(new Date()),base=`${me.id}/${date}/${vid}`;
  try{
   const paths={};
   for(const id of ["front","rear","left","right","odo"]){
-   const f=$(id).files[0]; if(!f)throw new Error("Photo manquante : "+id);
+   const f=$(id).files[0];if(!f)throw new Error("Photo manquante : "+id);
    paths[id]=await upload(f,`${base}/${id}-${Date.now()}.jpg`);
   }
-  const last=Number(opt.dataset.km||0), day=Math.max(0,km-last);
+  const last=Number(opt.dataset.km||0),day=Math.max(0,km-last);
   const {error}=await sb.from("vehicle_checks").insert({vehicle_id:vid,driver_id:me.id,check_date:date,km_start:last,km_end:km,km_day:day,photo_front:paths.front,photo_rear:paths.rear,photo_left:paths.left,photo_right:paths.right,photo_odometer:paths.odo});
   if(error)throw error;
   await sb.from("vehicles").update({last_km:km}).eq("id",vid);
-  alert("Contrôle enregistré. Kilométrage du jour : "+day+" km.");
-  home();
+  alert("Contrôle enregistré. Kilométrage du jour : "+day+" km.");go("myPlanning");
  }catch(e){alert(e.message)}
 }
 start();
